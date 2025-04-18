@@ -23,6 +23,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "537090c3-527e-45b6-b9fa-980c7f0b542b"
+      }
+    },
+    "owner": "burisyake"
   }
 }
