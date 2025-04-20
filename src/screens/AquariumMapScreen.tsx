@@ -1,12 +1,27 @@
-import React from 'react'
-import { View, Text, Button, StyleSheet, Dimensions } from 'react-native'
+import React, { useEffect, useRef, useState } from 'react'
+import { View, Text, Button, StyleSheet, Dimensions, TouchableOpacity } from 'react-native'
 import { useAquariumStore } from '../store/useAquariumStore'
 import { Fish } from '../types/fish'
 import Header from '../components/Header'
+import IkesuModal from '../components/IkesuModal'
 
 export default function AquariumMapScreen() {
-  const aquariums = useAquariumStore((state) => state.aquariums)
-  const addFishToAquarium = useAquariumStore((state) => state.addFishToAquarium)
+  const aquariums = useAquariumStore((state) => state.aquariums);
+  const addFishToAquarium = useAquariumStore((state) => state.addFishToAquarium);
+  const [showModal, setShowModal] = useState(false);
+  const aquariumRefs = useRef<Record<string, View | null>>({})
+  const aquariumLayouts = useRef<Record<string, { x: number; y: number; width: number; height: number }>>({})
+
+    useEffect(() => {
+    // 初回レンダリング後、レイアウトを測定
+    Object.entries(aquariumRefs.current).forEach(([id, view]) => {
+        if (view) {
+        view.measureInWindow((x, y, width, height) => {
+            aquariumLayouts.current[id] = { x, y, width, height }
+        })
+        }
+    })
+    }, [aquariums])
 
   const handleAddFish = (aquariumId: string) => {
     const newFish: Fish = {
@@ -43,6 +58,7 @@ export default function AquariumMapScreen() {
                 return (
                     <View
                         key={aq.id}
+                        ref={(ref) => (aquariumRefs.current[aq.id] = ref)}
                         style={[
                             styles.aquarium,
                             aquariumStyle,
@@ -57,6 +73,17 @@ export default function AquariumMapScreen() {
                     <Button title="魚を追加" onPress={() => handleAddFish(aq.id)} />
                 </View>
             )})}
+            <View style={styles.ikesuButtonContainer}>
+                <TouchableOpacity onPress={() => setShowModal(true)} style={styles.ikesuButton}>
+                    <Text style={{ color: '#fff' }}>いけす</Text>
+                </TouchableOpacity>
+                <IkesuModal
+                    visible={showModal}
+                    onClose={() => setShowModal(false)}
+                    aquariumLayouts={aquariumLayouts}
+                    addFishToAquarium={addFishToAquarium}
+                />
+            </View>
         </View>
     </View>
   )
@@ -87,4 +114,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  ikesuButtonContainer: {
+    position: 'absolute',
+    bottom: 30,
+    left: 20,
+    zIndex: 10,
+  },
+  ikesuButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+  },
+  
 })
