@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Fish } from '../types/fish'
 
 type FishBagState = {
@@ -7,12 +9,23 @@ type FishBagState = {
   removeFish: (fishId: string) => void
 }
 
-export const useFishBagStore = create<FishBagState>((set) => ({
-  fishes: [
-    { id: 'fish-1', name: '金魚1', type: 'goldfish', level: 1 },
-    { id: 'fish-2', name: '金魚2', type: 'goldfish', level: 2 },
-  ],
-  addFish: (fish) => set((state) => ({ fishes: [...state.fishes, fish] })),
-  removeFish: (fishId) =>
-    set((state) => ({ fishes: state.fishes.filter((f) => f.id !== fishId) })),
-}))
+export const useFishBagStore = create<FishBagState>()(
+    persist(
+      (set, get) => ({
+        fishes: [],
+        addFish: (fish) => set({ fishes: [...get().fishes, fish] }),
+        removeFish: (fishId) => set({ fishes: get().fishes.filter(f => f.id !== fishId) }),
+      }),
+      {
+        name: 'fish-bag-storage',
+        storage: {
+          getItem: async (key) => {
+            const value = await AsyncStorage.getItem(key)
+            return value ? JSON.parse(value) : null
+          },
+          setItem: (key, value) => AsyncStorage.setItem(key, JSON.stringify(value)),
+          removeItem: (key) => AsyncStorage.removeItem(key),
+        },
+      }
+    )
+  )
